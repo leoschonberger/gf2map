@@ -62,6 +62,7 @@ def _render_form(
             "sort": sort,
             "count": count,
             "fmt": fmt,
+            "version": __version__,
         },
         status_code=status_code,
     )
