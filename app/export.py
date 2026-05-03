@@ -40,9 +40,10 @@ def _description_lines(r: Restaurant) -> List[str]:
 
 
 def to_csv(restaurants: Iterable[Restaurant]) -> bytes:
-    """Render restaurants as Google My Maps-compatible CSV (UTF-8 BOM)."""
+    """Render restaurants as Google My Maps-compatible CSV (UTF-8 without BOM)."""
     buf = io.StringIO()
-    writer = csv.writer(buf, quoting=csv.QUOTE_ALL)
+    # Use QUOTE_MINIMAL - only quote fields that need it
+    writer = csv.writer(buf, quoting=csv.QUOTE_MINIMAL)
     writer.writerow(["Name", "Address", "Description", "URL"])
     for r in restaurants:
         # Use semicolon separator - Google My Maps doesn't allow: " < > [ ] |
@@ -53,7 +54,7 @@ def to_csv(restaurants: Iterable[Restaurant]) -> bytes:
             description,
             r.fmgf_url,
         ])
-    return buf.getvalue().encode("utf-8-sig")
+    return buf.getvalue().encode("utf-8")
 
 
 def _description_html(r: Restaurant) -> str:
