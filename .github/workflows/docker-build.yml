@@ -25,6 +25,36 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate version
+        id: version
+        run: |
+          # Check if this is a manual version tag
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            # Use the tag as-is
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"  # Remove 'v' prefix
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is_tagged=true" >> $GITHUB_OUTPUT
+          else
+            # Read base version from VERSION file
+            BASE_VERSION=$(cat VERSION | tr -d '\n\r')
+
+            # Split into major.minor.patch
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+
+            # Count commits since last tag (or all commits if no tags)
+            COMMIT_COUNT=$(git rev-list --count HEAD)
+
+            # Auto-increment patch version based on commit count
+            NEW_VERSION="${MAJOR}.${MINOR}.${COMMIT_COUNT}"
+
+            echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "is_tagged=false" >> $GITHUB_OUTPUT
+            echo "Auto-generated version: $NEW_VERSION (base: $BASE_VERSION, commits: $COMMIT_COUNT)"
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -45,10 +75,10 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,prefix={{branch}}-
+            type=semver,pattern={{version}},enable=${{ steps.version.outputs.is_tagged == 'true' }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ steps.version.outputs.is_tagged == 'true' }}
+            type=semver,pattern={{major}},enable=${{ steps.version.outputs.is_tagged == 'true' }}
+            type=raw,value=${{ steps.version.outputs.version }},enable=${{ github.event_name != 'pull_request' }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
@@ -57,7 +87,11 @@ jobs:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
@@ -67,9 +101,12 @@ jobs:
         run: |
           echo "### 🐳 Docker Image Published!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Pull the image:**" >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
           echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Run with docker-compose:**" >> $GITHUB_STEP_SUMMARY

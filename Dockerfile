@@ -1,11 +1,15 @@
 FROM python:3.11-slim
 
+ARG VERSION=dev
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    APP_VERSION=${VERSION}
 
 WORKDIR /app
+
+LABEL org.opencontainers.image.version="${VERSION}"
 
 # Install runtime deps. lxml ships manylinux wheels, no system libs needed.
 COPY requirements.txt .

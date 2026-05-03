@@ -1,0 +1,8 @@
+services:
+  # Application using pre-built image from GitHub Container Registry
+  # No Tailscale - just the app with exposed port for testing
+  app:
+    image: ghcr.io/leoschonberger/gf2map:latest
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
