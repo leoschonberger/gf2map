@@ -1,0 +1,37 @@
+services:
+  # Tailscale sidecar. Provides the network namespace shared with `app`.
+  # Reachable from your tailnet at http://gf2map:8000.
+  tailscale:
+    image: tailscale/tailscale:latest
+    hostname: gf2map
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "false"
+      # Optional: tag the device on your tailnet.
+      # TS_EXTRA_ARGS: "--advertise-tags=tag:gf2map"
+      # Optional: expose via Tailscale Funnel/Serve. Provide a JSON config
+      # file mounted into the container and reference it here.
+      # TS_SERVE_CONFIG: /config/serve.json
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    # Uncomment for local debugging without a tailnet:
+    # ports:
+    #   - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+
+  # Application. Shares the tailscale network namespace, so binding 0.0.0.0:8000
+  # inside this container makes the app reachable on the tailnet at gf2map:8000.
+  app:
+    build: .
+    network_mode: "service:tailscale"
+    depends_on:
+      - tailscale
+    restart: unless-stopped
+
+volumes:
+  tailscale-state:

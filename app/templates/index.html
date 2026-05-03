@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>gf2map - Find Me Gluten Free to Google My Maps</title>
+  <style>
+    :root {
+      --fg: #1f2933;
+      --muted: #6b7280;
+      --bg: #f7f7f8;
+      --card: #ffffff;
+      --accent: #2f855a;
+      --accent-fg: #ffffff;
+      --border: #d1d5db;
+      --error-bg: #fee2e2;
+      --error-fg: #991b1b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.45;
+    }
+    main {
+      max-width: 640px;
+      margin: 2.5rem auto;
+      padding: 0 1rem;
+    }
+    h1 {
+      margin: 0 0 0.25rem 0;
+      font-size: 1.6rem;
+    }
+    .lede {
+      color: var(--muted);
+      margin: 0 0 1.5rem 0;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.25rem 1rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-top: 0.85rem;
+      margin-bottom: 0.3rem;
+    }
+    input[type=text], input[type=number], select {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--fg);
+    }
+    input:focus, select:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+    .row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .row > div { flex: 1 1 180px; }
+    button {
+      margin-top: 1.25rem;
+      background: var(--accent);
+      color: var(--accent-fg);
+      border: 0;
+      padding: 0.7rem 1.1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.05); }
+    .error {
+      background: var(--error-bg);
+      color: var(--error-fg);
+      border: 1px solid #fca5a5;
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      margin-bottom: 1rem;
+    }
+    footer {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 1.25rem;
+    }
+    code { font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>gf2map</h1>
+    <p class="lede">
+      Search <a href="https://www.findmeglutenfree.com" target="_blank" rel="noopener">findmeglutenfree.com</a>
+      and export the results as CSV or KML for import into Google My Maps.
+    </p>
+
+    {% if error %}
+    <div class="error" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <form class="card" method="post" action="/export">
+      <label for="address">Address or place</label>
+      <input id="address" name="address" type="text" required
+             placeholder="Portland, Oregon"
+             value="{{ address|default('', true) }}" />
+
+      <div class="row">
+        <div>
+          <label for="sort">Sort</label>
+          <select id="sort" name="sort">
+            <option value="best"     {% if sort == 'best' %}selected{% endif %}>Best Match</option>
+            <option value="rating"   {% if sort == 'rating' %}selected{% endif %}>Rating</option>
+            <option value="distance" {% if sort == 'distance' %}selected{% endif %}>Distance</option>
+          </select>
+        </div>
+        <div>
+          <label for="count">Results (1-50)</label>
+          <input id="count" name="count" type="number" min="1" max="50"
+                 value="{{ count|default(25, true) }}" />
+        </div>
+        <div>
+          <label for="format">Format</label>
+          <select id="format" name="format">
+            <option value="csv" {% if fmt == 'csv' %}selected{% endif %}>CSV (Google My Maps)</option>
+            <option value="kml" {% if fmt == 'kml' %}selected{% endif %}>KML</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit">Export</button>
+    </form>
+
+    <footer>
+      Geocoding via OpenStreetMap Nominatim. Data scraped from
+      findmeglutenfree.com for personal use.
+    </footer>
+  </main>
+</body>
+</html>
