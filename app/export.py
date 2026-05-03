@@ -45,8 +45,8 @@ def to_csv(restaurants: Iterable[Restaurant]) -> bytes:
     writer = csv.writer(buf, quoting=csv.QUOTE_ALL)
     writer.writerow(["Name", "Address", "Description", "URL"])
     for r in restaurants:
-        # Use space separator instead of newlines for Google My Maps compatibility
-        description = " | ".join(_description_lines(r))
+        # Use semicolon separator - Google My Maps doesn't allow: " < > [ ] |
+        description = "; ".join(_description_lines(r))
         writer.writerow([
             r.name,
             r.address or "",
