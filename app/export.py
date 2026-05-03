@@ -29,7 +29,9 @@ def _description_lines(r: Restaurant) -> List[str]:
     if r.gf_menu_items:
         lines.append(f"GF Menu: {r.gf_menu_items}")
     if r.featured_review:
-        lines.append(f'Featured: "{r.featured_review}"')
+        # Replace quotes with single quotes for Google My Maps compatibility
+        review = r.featured_review.replace('"', "'")
+        lines.append(f"Featured: {review}")
     if r.distance:
         lines.append(f"Distance: {r.distance}")
     lines.append("")
@@ -43,7 +45,8 @@ def to_csv(restaurants: Iterable[Restaurant]) -> bytes:
     writer = csv.writer(buf, quoting=csv.QUOTE_ALL)
     writer.writerow(["Name", "Address", "Description", "URL"])
     for r in restaurants:
-        description = "\n".join(_description_lines(r))
+        # Use space separator instead of newlines for Google My Maps compatibility
+        description = " | ".join(_description_lines(r))
         writer.writerow([
             r.name,
             r.address or "",
