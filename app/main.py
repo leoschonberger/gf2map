@@ -81,7 +81,9 @@ def healthz() -> JSONResponse:
 @app.post("/export")
 def export(
     request: Request,
-    address: str = Form(...),
+    # Default to "" so an empty field reaches ExportRequest validation and
+    # shows the friendly form error (newer FastAPI treats "" as missing).
+    address: str = Form(""),
     sort: str = Form("best"),
     count: int = Form(25),
     format: str = Form("csv"),
